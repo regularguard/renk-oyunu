@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Renk Oyunu</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      user-select: none;
+      transition: background-color 0.3s;
+    }
+
+    .dark-mode {
+      background-color: #222;
+      color: #fff;
+    }
+
+    .light-mode {
+      background-color: #f0f0f0;
+      color: #000;
+    }
+
+    #target {
+      font-size: 28px;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    #targetColor {
+      transition: color 0.5s;
+    }
+
+    #colorBox {
+      width: 300px;
+      height: 300px;
+      margin: 0 auto;
+      border: 5px solid #333;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    #score {
+      margin-top: 20px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    #soundToggle, #themeToggle, #testSound {
+      margin-top: 15px;
+      margin-left: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+
+    #soundToggle:hover, #themeToggle:hover, #testSound:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body class="dark-mode">
+  <div id="target">Seç: <span id="targetColor">Renk</span></div>
+  <div id="colorBox"></div>
+  <div id="score">Skor: <span id="scoreValue">0</span></div>
+  <button id="soundToggle">🔊 Ses Açık</button>
+  <button id="themeToggle">🌙 Koyu Mod</button>
+  <button id="testSound">Sesleri Test Et</button>
+
+  <audio id="beepSound" src="https://jumpshare.com/share/mKp4uwyX64FkZZTUki30" preload="auto"></audio>
+  <audio id="errorSound" src="file:///C:/nvm4w/renk-oyunu/src/wronganswer-37702.mp3" preload="auto"></audio>
+
+  <script>
+    const colorBox = document.getElementById('colorBox');
+    const targetColorText = document.getElementById('targetColor');
+    const scoreDisplay = document.getElementById('scoreValue');
+    const beepSound = document.getElementById('beepSound');
+    const errorSound = document.getElementById('errorSound');
+    const soundToggleBtn = document.getElementById('soundToggle');
+    const themeToggleBtn = document.getElementById('themeToggle');
+    const testSoundBtn = document.getElementById('testSound');
+
+    const namedColors = {
+      "Kırmızı": "rgb(255, 0, 0)",
+      "Yeşil": "rgb(0, 128, 0)",
+      "Mavi": "rgb(0, 0, 255)",
+      "Sarı": "rgb(255, 255, 0)",
+      "Turuncu": "rgb(255, 165, 0)"
+    };
+
+    let targetName = "";
+    let targetRGB = "";
+    let currentColor = "";
+    let score = 0;
+    let soundEnabled = true;
+    let isDarkMode = true;
+
+    // Ses dosyalarının yüklendiğini kontrol et
+    beepSound.addEventListener('loadeddata', () => {
+      console.log('Doğru ses dosyası yüklendi: src/correct-choice-43861.mp3');
+    });
+    beepSound.addEventListener('error', () => {
+      console.error('Doğru ses dosyası yüklenemedi: src/correct-choice-43861.mp3');
+    });
+    errorSound.addEventListener('loadeddata', () => {
+      console.log('Yanlış ses dosyası yüklendi: src/wronganswer-37702.mp3');
+    });
+    errorSound.addEventListener('error', () => {
+      console.error('Yanlış ses dosyası yüklenemedi: src/wronganswer-37702.mp3');
+    });
+
+    function pickNewTargetColor() {
+      const colorNames = Object.keys(namedColors);
+      const randomName = colorNames[Math.floor(Math.random() * colorNames.length)];
+      targetName = randomName;
+      targetRGB = namedColors[randomName];
+      targetColorText.textContent = targetName;
+    }
+
+    function getRandomRGBColor() {
+      const colorNames = Object.keys(namedColors);
+      const randomName = colorNames[Math.floor(Math.random() * colorNames.length)];
+      return namedColors[randomName];
+    }
+
+    function updateBoxColor() {
+      currentColor = getRandomRGBColor();
+      colorBox.style.backgroundColor = currentColor;
+    }
+
+    function updateTargetTextColor() {
+      targetColorText.style.color = getRandomRGBColor();
+    }
+
+    function resetGame() {
+      score = 0; // Skor sıfırlanır
+      scoreDisplay.textContent = score;
+      pickNewTargetColor();
+      updateBoxColor();
+    }
+
+    function normalizeRGB(rgb) {
+      return rgb.replace(/\s+/g, '').toLowerCase();
+    }
+
+    // Renk kutusunun ve hedef yazının rengini sürekli değiştir
+    setInterval(updateBoxColor, 800);
+    setInterval(updateTargetTextColor, 700);
+
+    // Başlangıçta hedef belirle
+    pickNewTargetColor();
+    updateBoxColor();
+
+    // Renk eşleşme kontrolü
+    function checkColorMatch() {
+      const currentBoxColor = getComputedStyle(colorBox).backgroundColor;
+      if (normalizeRGB(currentBoxColor) === normalizeRGB(targetRGB)) {
+        score++;
+        scoreDisplay.textContent = score;
+        if (soundEnabled) {
+          console.log('Doğru seçim: Ses oynatılıyor...');
+          beepSound.currentTime = 0;
+          beepSound.play().catch(e => console.error("Doğru ses oynatma hatası:", e.message));
+        }
+        pickNewTargetColor();
+      } else {
+        if (soundEnabled) {
+          console.log('Yanlış seçim: Ses oynatılıyor...');
+          errorSound.currentTime = 0;
+          errorSound.play().catch(e => console.error("Yanlış ses oynatma hatası:", e.message));
+        }
+        resetGame(); // Yanlış seçimde skor sıfırlanır
+      }
+    }
+
+    // Fare tıklaması
+    colorBox.addEventListener('click', checkColorMatch);
+
+    // Space tuşu ile kontrol
+    document.addEventListener('keydown', (event) => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        checkColorMatch();
+      }
+    });
+
+    // Ses aç/kapa
+    soundToggleBtn.addEventListener('click', () => {
+      soundEnabled = !soundEnabled;
+      soundToggleBtn.textContent = soundEnabled ? '🔊 Ses Açık' : '🔇 Ses Kapalı';
+    });
+
+    // Tema değiştirme
+    themeToggleBtn.addEventListener('click', () => {
+      isDarkMode = !isDarkMode;
+      document.body.className = isDarkMode ? 'dark-mode' : 'light-mode';
+      themeToggleBtn.textContent = isDarkMode ? '🌙 Koyu Mod' : '☀️ Açık Mod';
+    });
+
+    // Sesleri test et
+    testSoundBtn.addEventListener('click', () => {
+      if (soundEnabled) {
+        console.log('Ses testi: Doğru ses oynatılıyor...');
+        beepSound.currentTime = 0;
+        beepSound.play().catch(e => console.error("Doğru ses oynatma hatası:", e.message));
+        setTimeout(() => {
+          console.log('Ses testi: Yanlış ses oynatılıyor...');
+          errorSound.currentTime = 0;
+          errorSound.play().catch(e => console.error("Yanlış ses oynatma hatası:", e.message));
+        }, 1000);
+      }
+    });
+  </script>
+</body>
+</html>
